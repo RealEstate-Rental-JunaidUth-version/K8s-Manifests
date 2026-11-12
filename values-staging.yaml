@@ -11,7 +11,7 @@ microservices:
     tag: latest
     port: 8080
     type: springboot
-    serviceType: ClusterIP # Ingress is now the entry point — no need for LoadBalancer
+    serviceType: ClusterIP 
     needsConfigServer: true
   property-microservice:
     image: junaiduthman/property-management-service
@@ -73,7 +73,7 @@ microservices:
     tag: 21-76d4f5f
     port: 80
     type: angular
-    serviceType: ClusterIP # Ingress is now the entry point — no need for LoadBalancer
+    serviceType: ClusterIP 
 databases:
   user-db:
     databaseName: userdb
