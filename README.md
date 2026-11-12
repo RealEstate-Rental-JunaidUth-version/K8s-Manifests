@@ -1,4 +1,4 @@
-# Cloud-Native GitOps Delivery Platform (Helm & Argo CD)
+# Kubernetes Cluster Managed by Helm & Argo CD
 
 ![Helm 3](https://img.shields.io/badge/Helm-v3-0F1689?logo=helm&logoColor=white)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.31-326CE5?logo=kubernetes&logoColor=white)
@@ -16,10 +16,11 @@ The platform operates on pure **declarative GitOps**. Git is the single source o
 
 ```mermaid
 flowchart TD
-    subgraph CI["Continuous Integration & Promotion"]
-        Dev["Developer Push / PR"] -->|"Build & Push Image"| Registry["Container Registry (Docker Hub)"]
-        Registry -->|"Automated Tag Update"| StagingValues["values-staging.yaml"]
-        Jenkins["Jenkins Promotion Pipeline (Jenkinsfile)"] -->|"Promotes Tested Tag"| ProdValues["values-prod.yaml"]
+    subgraph CI["Continuous Integration & Promotion (Jenkins)"]
+        Dev["Developer Push / PR"] -->|"Triggers Webhook"| JenkinsCI["Jenkins CI Pipeline (Build & Test)"]
+        JenkinsCI -->|"Build & Push Container Image"| Registry["Container Registry (Docker Hub)"]
+        JenkinsCI -->|"Update Staging Tag"| StagingValues["values-staging.yaml"]
+        JenkinsPromote["Jenkins CD Promotion Pipeline (Jenkinsfile)"] -->|"Promotes Verified Tag"| ProdValues["values-prod.yaml"]
     end
 
     subgraph GitRepo["Git Repository (Single Source of Truth)"]
@@ -80,9 +81,6 @@ Instead of maintaining disjointed manifests or separate charts for every microse
 | **Target Namespace** | `staging` | `prod` |
 | **Argo CD App** | `realestate-staging` | `realestate-prod` |
 | **Spring Active Profile** | `staging` | `prod` |
-| **Replica Strategy** | Scaled to zero / on-demand for cloud cost saving | High availability (`replicaCount >= 1`) |
-| **Image Tag Policy** | Rapid iterations (`latest` or specific commit hash) | Immutable promoted semantic releases |
-| **Secret Sourcing** | Encrypted staging secrets | Production-grade sealed credentials |
 | **Ingress IngressClass** | Environment-scoped routing rules | Production TLS & default IngressClass |
 
 ---
@@ -155,52 +153,6 @@ spec:
 - **Zero In-Cluster Deployer Credentials**: CI systems (Jenkins/GitHub Actions) never require direct `kubectl` access to the production cluster. They only write commits to Git.
 - **Drift Detection & Self-Healing**: If an operator manually modifies or deletes a deployment in Kubernetes, Argo CD detects the divergence and immediately restores the state defined in Git.
 - **Automated Pruning**: When a service or config is deleted from `values.yaml`, Argo CD cleanly deletes the matching Kubernetes objects.
-
----
-
-## 🚀 Environment Promotion Pipeline (`Jenkinsfile`)
-
-Release promotion from **Staging** to **Production** is handled via an automated, auditable pipeline:
-
-1. **Selection**: The operator or pipeline specifies which microservice to promote (e.g. `gateway-service`, `property-microservice`).
-2. **Extraction**: The pipeline clones the GitOps repo and reads the verified image tag currently running in `values-staging.yaml` using `yq`.
-3. **Immutability Enforcement**: Verifies the staging tag is a valid, immutable version (blocking untagged or `latest` promotions).
-4. **Git Mutation**: Updates the target tag in `values-prod.yaml`.
-5. **GitOps Trigger**: Commits and pushes the change back to the repository (`chore(prod): promote <service> to <tag> [skip ci]`).
-6. **Continuous Delivery**: Argo CD automatically detects the Git push and performs a zero-downtime rolling update in the `prod` namespace.
-
----
-
-## 🧩 Microservices & AI Architecture Managed by Helm
-
-The Helm chart dynamically iterates over all platform components:
-
-### 1. Edge & Core Infrastructure
-- **`gateway-service`**: Spring Cloud Gateway routing incoming external traffic to appropriate backend services.
-- **`config-service`**: Centralized Spring Cloud Configuration server providing dynamic configuration to microservices on startup.
-- **`public-app`**: Frontend web user interface.
-
-### 2. Domain Microservices
-- **`auth-server`**: OAuth2/JWT authentication and token issuance.
-- **`user-management-service`**: User profiles, tenant identities, and access control.
-- **`property-microservice`**: Property cataloging, metadata, and asset lifecycle.
-- **`rental-agreement-microservice`**: Digital rental contracts, agreements, and execution state.
-- **`notification-service`**: Event alerts, messaging, and email/SMS triggers.
-
-### 3. Machine Learning & Predictive AI Engines
-- **`ml-pricesuggestionmodel`**: AI real estate valuation and dynamic price suggestion engine.
-- **`predictive-heatmaps-of-neighborhood-price-evolution`**: Geospatial heatmap and price trend forecaster.
-- **`property-recommendation-engine`**: K-Means & Cosine-Similarity personalized recommendation engine.
-- **`tenant-risk-scoring`**: Random Forest tenant risk assessment and classification model.
-
----
-
-## 🔒 Secret Management Architecture
-
-- **Bitnami Sealed Secrets**: Asymmetric public/private key cryptography.
-- **Developer Workflow**: Developers use the `kubeseal` CLI with the cluster's public certificate to seal plaintext Kubernetes secrets into `SealedSecret` custom resources.
-- **Safe Git Storage**: Encrypted `SealedSecret` files can be safely checked into Git.
-- **In-Cluster Decryption**: The in-cluster Sealed Secrets controller uses its pre-injected private key to decrypt `SealedSecret` manifests into native Kubernetes `Secret` objects accessible by application pods.
 
 ---
 
