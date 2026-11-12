@@ -58,6 +58,7 @@ global:
 # List every microservice here. The template will loop through this list.
 microservices:
   gateway-service:
+    replicaCount: 3
     image: junaiduthman/gateway-service
     tag: latest
     port: 8080
@@ -66,6 +67,7 @@ microservices:
     needsConfigServer: true
     envFromSecret: "app-secrets"
   property-microservice:
+    replicaCount: 2
     image: junaiduthman/property-management-service
     tag: latest
     port: 8080
@@ -73,6 +75,7 @@ microservices:
     needsConfigServer: true
     envFromSecret: "app-secrets"
   user-management-service:
+    replicaCount: 3
     image: junaiduthman/user-management-service
     tag: latest
     port: 8080
@@ -80,6 +83,7 @@ microservices:
     needsConfigServer: true
     envFromSecret: "app-secrets"
   rental-agreement-microservice:
+    replicaCount: 2
     image: junaiduthman/rental-agreement-v2
     tag: latest
     port: 8080
@@ -87,26 +91,31 @@ microservices:
     needsConfigServer: true
     envFromSecret: "app-secrets"
   ml-pricesuggestionmodel:
+    replicaCount: 1
     image: junaiduthman/ml-pricesuggestionmodel
     tag: latest
     port: 5000
     type: python
   property-recommendation-engine:
+    replicaCount: 1
     image: junaiduthman/property-recommendation-engine
     tag: latest
     port: 5000
     type: python
   tenant-risk-scoring:
+    replicaCount: 2
     image: junaiduthman/tenant-risk-scoring
     tag: latest
     port: 5000
     type: python
   predictive-heatmaps-of-neighborhood-price-evolution:
+    replicaCount: 2
     image: junaiduthman/predictive-heatmaps-of-neighborhood-price-evolution
     tag: latest
     port: 5000
     type: python
   notification-service:
+    replicaCount: 1
     image: junaiduthman/notification-service
     tag: latest
     port: 8080
@@ -116,11 +125,13 @@ microservices:
     env:
       KAFKA_BOOTSTRAP_SERVERS: "kafka.prod.svc.cluster.local:9092"
   config-service:
+    replicaCount: 1
     image: junaiduthman/config-service
     tag: 15-bf1763b
     port: 8888
     type: springboot
   auth-server:
+    replicaCount: 3
     image: junaiduthman/authorization-service
     tag: latest
     port: 8080
@@ -128,6 +139,7 @@ microservices:
     needsConfigServer: true
     envFromSecret: "app-secrets"
   public-app:
+    replicaCount: 3
     image: junaiduthman/public-app
     tag: 21-76d4f5f
     port: 80
